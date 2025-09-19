@@ -2,7 +2,6 @@ import streamlit as st
 import plotly.graph_objects as go
 from data_handler import load_ocean_data, filter_data, get_simple_stats
 from chart_maker import create_temperature_map, create_simple_line_chart, create_stats_chart
-import re
 import time
 
 # Page configuration
@@ -14,6 +13,7 @@ st.set_page_config(
 
 # Custom CSS with improvements
 st.markdown("""
+
 <style>
     .stApp {
         background-color: #eaebed;
@@ -70,27 +70,95 @@ st.markdown("""
     .stSpinner {
         color: #006989;
     }
+    
+    .dashboard-title {
+        color: #006989 !important;
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+
+    .dashboard-subtitle {
+        color: #006989 !important;
+        text-align: center;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0.8;
+    }
+
+    .dashboard-section {
+        color: #006989 !important;
+        font-weight: bold;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    /* Fix expandable content readability */
+    .streamlit-expanderContent {
+        color: #003d4d !important;
+        background-color: #ffffff !important;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #006989;
+    }
+
+    /* Fix expandable header */
+    .streamlit-expanderHeader {
+        background-color: #f8f9fa !important;
+        color: #006989 !important;
+        border: 1px solid #006989;
+        border-radius: 8px;
+    }
+
+    /* Fix expandable content text */
+    .streamlit-expanderContent p {
+        color: #003d4d !important;
+        margin: 5px 0;
+        font-size: 0.9rem;
+    }
+
+    /* Fix markdown content inside expanders */
+    .streamlit-expanderContent .markdown-text-container {
+        color: #003d4d !important;
+    }
+    .dashboard-content {
+        background-color: #eaf6f9;   /* lighter bg */
+        color: #003d4d;             /* readable text */
+        padding: 15px;
+        border-radius: 20px;
+        border: 1px solid #006989;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-button {
+        background-color: #006989;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+
+    .dashboard-button:hover {
+        background-color: #005577;
+    }
+
+
+    /* ✅ After User Guide: reset text color */
+    .block-container {
+        color: #006989 !important;
+    }
 </style>
+
 """, unsafe_allow_html=True)
 
-def render_chatbot_page():
-# Title and subtitle
-    st.markdown('<div class="main-title">FloatChat</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Your AI Ocean Data Assistant 🌊</div>', unsafe_allow_html=True)
-# Add after the subtitle
-    st.markdown("""
-    <div style="text-align: center; margin-bottom: 20px;">
-        <span style="color: #28a745; font-size: 0.9rem;">🟢 Ocean Data Online</span> | 
-        <span style="color: #006989; font-size: 0.9rem;">📊 2 Regions Available</span> | 
-        <span style="color: #006989; font-size: 0.9rem;">🔬 Temperature & Salinity Data</span>
-    </div>
-""", unsafe_allow_html=True)
-# Load ocean data once at startup
 @st.cache_data
 def load_data():
     return load_ocean_data()
 
-# FIXED: Enhanced command parser with proper unknown command detection
 def parse_user_input(user_input):
     """Enhanced natural language parsing with unknown command detection"""
     user_input = user_input.lower().strip()
@@ -151,9 +219,6 @@ def parse_user_input(user_input):
         # Has some ocean keywords but unclear what they want
         return "unclear", None, None, None
 
-
-# In app.py, replace the entire function with this
-
 def generate_help_response():
     """Generate helpful command examples"""
     help_text = """🌊 **Welcome to FloatChat!** Here's what I can do:
@@ -179,41 +244,6 @@ def generate_help_response():
 • "What's the salinity map for Bengal?" """
     return help_text
 
-def render_dashboard_page():
-    """Renders the Dashboard/Landing Page."""
-    st.title("🌊 Welcome to FloatChat!")
-    st.markdown("Your AI assistant for exploring real-time ocean data from Argo floats.")
-    
-    st.markdown("---")
-
-    st.subheader("About This Project")
-    st.write("""
-    FloatChat is designed to make oceanographic data accessible to everyone. 
-    Using natural language, you can ask the chatbot to generate visualizations for key ocean parameters
-    like temperature and salinity in different regions.
-    """)
-
-    st.subheader("User Guide")
-    with st.expander("📍 Available Regions & Keywords"):
-        st.markdown("- **Bay of Bengal** (Use: `bengal`)")
-        st.markdown("- **Arabian Sea** (Use: `arabian`)")
-
-    with st.expander("🔬 Available Parameters & Keywords"):
-        st.markdown("- **Temperature** (Use: `temperature`, `temp`)")
-        st.markdown("- **Salinity** (Use: `salinity`, `salt`)")
-    
-    with st.expander("📊 Available Chart Types & Keywords"):
-        st.markdown("- **Map:** Shows data points on a map. (Use: `map`)")
-        st.markdown("- **Trend:** Shows changes over time. (Use: `trend`)")
-        st.markdown("- **Statistics:** Shows a statistical box plot. (Use: `stats`)")
-
-    st.markdown("---")
-    
-    # Session state is used to switch pages
-    if st.button("Start Chatting! 🚀"):
-        st.session_state.page = "Chatbot"
-        st.rerun()
-        
 def generate_greeting_response():
     """Generate friendly greeting"""
     greetings = [
@@ -265,7 +295,6 @@ Available parameters:
 
 Example: "Show temperature in {region}" """
 
-# FIXED: Enhanced response generation with proper error handling
 def generate_response(user_input):
     """Enhanced response generation with better error handling"""
     try:
@@ -344,73 +373,147 @@ Try asking about one of these regions!""", None
 
 Try asking something like 'show temperature Bay of Bengal' or type 'help' for examples!""", None
 
-# Initialize chat history with welcome message
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {
-            "role": "assistant", 
-            "content": generate_help_response(),
-            "chart": None
-        }
-    ]
+def render_dashboard_page():
+    """Renders the Dashboard/Landing Page."""
+    st.markdown('<div class="dashboard-title">🌊 Welcome to FloatChat!</div>', unsafe_allow_html=True)
+    st.markdown('<div class="dashboard-subtitle">Your AI assistant for exploring real-time ocean data from Argo floats.</div>', unsafe_allow_html=True)
+    
+    st.markdown("---")
 
-# FIXED: Display chat messages with unique keys
-message_counter = 0
-for message in st.session_state.messages:
-    message_counter += 1
-    if message["role"] == "user":
-        st.markdown(f'<div class="user-message">{message["content"]}</div>', 
-                   unsafe_allow_html=True)
-    else:
-        st.markdown(f'<div class="bot-message">{message["content"]}</div>', 
-                   unsafe_allow_html=True)
-        # FIXED: Display chart with unique key
-        if "chart" in message and message["chart"] is not None:
-            st.plotly_chart(message["chart"], use_container_width=True, key=f"chart_{message_counter}")
-# Add before the chat input section
-st.markdown("""
-<div style="margin-top: 40px; padding: 20px; border-top: 1px solid #006989; text-align: center; color: #006989; font-size: 0.8rem;">
-    <strong>FloatChat v1.0</strong> | Ocean Data Visualization Assistant<br>
-    Data: Bay of Bengal & Arabian Sea | Updated: Real-time | Built with Streamlit & Plotly
-</div>
-""", unsafe_allow_html=True)
-# Chat input with better placeholder
-if prompt := st.chat_input("Ask me about ocean data... (try: 'temperature Bengal' or 'help')"):
-    # Add user message
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.markdown('<div class="dashboard-section">About This Project</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="dashboard-content">
+    FloatChat is designed to make oceanographic data accessible to everyone. 
+    Using natural language, you can ask the chatbot to generate visualizations for key ocean parameters
+    like temperature and salinity in different regions.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="dashboard-section">User Guide</div>', unsafe_allow_html=True)
     
-    # Enhanced loading with multiple stages
-    loading_placeholder = st.empty()
+    with st.expander("📍 Available Regions & Keywords"):
+        st.markdown("- **Bay of Bengal** (Use: `bengal`)")
+        st.markdown("- **Arabian Sea** (Use: `arabian`)")
+
+    with st.expander("🔬 Available Parameters & Keywords"):
+        st.markdown("- **Temperature** (Use: `temperature`, `temp`)")
+        st.markdown("- **Salinity** (Use: `salinity`, `salt`)")
     
-    with st.spinner("🌊 Analyzing your request..."):
-        time.sleep(0.5)  # Brief pause for better UX
+    with st.expander("📊 Available Chart Types & Keywords"):
+        st.markdown("- **Map:** Shows data points on a map. (Use: `map`)")
+        st.markdown("- **Trend:** Shows changes over time. (Use: `trend`)")
+        st.markdown("- **Statistics:** Shows a statistical box plot. (Use: `stats`)")
+
+    st.markdown("---")
+    
+    # Session state is used to switch pages
+    st.markdown("""
+    <style>
+        .stButton > button {
+            width: 100%;
+            background-color: #006989;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 20px;
+        }
+        .stButton > button:hover {
+            background-color: #005577;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    if st.button("Start Chatting! 🚀"):
+        st.session_state.page = "Chatbot"
+        st.rerun()
+
+def render_chatbot_page():
+    """Renders the Chatbot Page."""
+    # Title and subtitle
+    st.markdown('<div class="main-title">FloatChat</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Your AI Ocean Data Assistant 🌊</div>', unsafe_allow_html=True)
+    
+    # Add status indicators
+    st.markdown("""
+    <div style="text-align: center; margin-bottom: 20px;">
+        <span style="color: #28a745; font-size: 0.9rem;">🟢 Ocean Data Online</span> | 
+        <span style="color: #006989; font-size: 0.9rem;">📊 2 Regions Available</span> | 
+        <span style="color: #006989; font-size: 0.9rem;">🔬 Temperature & Salinity Data</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Initialize chat history with welcome message
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {
+                "role": "assistant", 
+                "content": generate_help_response(),
+                "chart": None
+            }
+        ]
+
+    # Display chat messages with unique keys
+    message_counter = 0
+    for message in st.session_state.messages:
+        message_counter += 1
+        if message["role"] == "user":
+            st.markdown(f'<div class="user-message">{message["content"]}</div>', 
+                       unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="bot-message">{message["content"]}</div>', 
+                       unsafe_allow_html=True)
+            # Display chart with unique key
+            if "chart" in message and message["chart"] is not None:
+                st.plotly_chart(message["chart"], use_container_width=True, key=f"chart_{message_counter}")
+    
+    # Add footer
+    st.markdown("""
+    <div style="margin-top: 40px; padding: 20px; border-top: 1px solid #006989; text-align: center; color: #006989; font-size: 0.8rem;">
+        <strong>FloatChat v1.0</strong> | Ocean Data Visualization Assistant<br>
+        Data: Bay of Bengal & Arabian Sea | Updated: Real-time | Built with Streamlit & Plotly
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Chat input with better placeholder
+    if prompt := st.chat_input("Ask me about ocean data... (try: 'temperature Bengal' or 'help')"):
+        # Add user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
         
-    # Parse the command first
-    intent, parameter, region, chart_type = parse_user_input(prompt)
-    
-    # Show different loading messages based on intent
-    if intent == "show_data":
-        with st.spinner("🔍 Accessing ocean database..."):
-            time.sleep(0.3)
-        with st.spinner("📊 Processing data and creating visualization..."):
+        # Enhanced loading with multiple stages
+        with st.spinner("🌊 Analyzing your request..."):
+            time.sleep(0.5)  # Brief pause for better UX
+        
+        # Parse the command first
+        intent, parameter, region, chart_type = parse_user_input(prompt)
+        
+        # Show different loading messages based on intent
+        if intent == "show_data":
+            with st.spinner("🔍 Accessing ocean database..."):
+                time.sleep(0.3)
+            with st.spinner("📊 Processing data and creating visualization..."):
+                response_text, chart = generate_response(prompt)
+        else:
             response_text, chart = generate_response(prompt)
-    else:
-        response_text, chart = generate_response(prompt)
-    
-    # Add bot response
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": response_text,
-        "chart": chart
-    })
-    
-    # Rerun to display new messages
-    st.rerun()
-    # --- Main App Router ---
+        
+        # Add bot response
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": response_text,
+            "chart": chart
+        })
+        
+        # Rerun to display new messages
+        st.rerun()
+
+# --- Main App Router ---
 # Use session_state to manage the current page
 if 'page' not in st.session_state:
     st.session_state.page = "Dashboard"
 
+# Sidebar navigation
 page = st.sidebar.radio(
     "Navigation", 
     ("Dashboard", "Chatbot"), 
@@ -418,9 +521,8 @@ page = st.sidebar.radio(
     on_change=lambda: setattr(st.session_state, 'page', st.session_state.page_select)
 )
 
+# Render the appropriate page
 if st.session_state.page == "Dashboard":
     render_dashboard_page()
 else:
-    # We will create the render_chatbot_page() function in the next step.
-    # For now, this will cause an error, which we will fix immediately.
     render_chatbot_page()
